@@ -5,13 +5,16 @@
 #include <stdlib.h>
 
 int main(){
-	TUIInstance* instance = initTUI(); 
+	initTUI(); 
 
 	struct timeval tv;
 	fd_set fds;
-
-	createWindow(15, 20, 100, 10);
-
+	
+	TUIWindow window1 = createWindow(1, 1, 100, 3);
+	TUIWindow window2 = createWindow(100, 20, 30, 20);
+	changeActiveWindow(window2);
+	drawWindow(window1);
+	drawWindow(window2);
 	flashFrontBuffer();
 	while(1){
 		tv.tv_sec = 0;
@@ -23,10 +26,21 @@ int main(){
 			if (c == 'q'){
 				break;
 			}
+			if (c == 'd'){
+				if(getActiveWindow() == window2){
+					changeActiveWindow(window1);
+				}else{
+					changeActiveWindow(window2);
+				}
+				eraseBackBuffer();
+				drawWindow(window1);
+				drawWindow(window2);
+				flashFrontBuffer();
+			}
 		}
+
 		drawFrontBuffer();	
 	}
-	free(instance);
 	closeTUI();
 	return 0;
 }

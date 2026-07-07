@@ -32,8 +32,11 @@
 #define fg_BLUE 34
 #define fg_BLACK 30
 #define fg_WHITE 37
+#define fg_BRIGHTWHITE 97
 #define bg_BLACK 40
 #define bg_WHITE 47
+
+#define MAX_NUMBER_OF_WINDOWS 5
 
 
 
@@ -48,6 +51,14 @@ typedef struct{
 	uint8_t screenHeight;
 }TUIInstance;
 
+typedef struct{
+	uint8_t id;
+	uint16_t x;
+	uint16_t y;
+	uint8_t width;
+	uint8_t height;
+	Cell* windowBuffer;
+}WindowObject;
 
 
 typedef int TUIWindow;
@@ -56,6 +67,14 @@ void closeTUI();
 TUIInstance* initTUI();
 Cell* createFrameBuffer(TUIInstance* tuiinstance);
 TUIWindow createWindow(uint16_t x, uint16_t y, uint8_t width, uint8_t height); //creates a window object, activates it, draws it to the back buffer
+void changeActiveWindow(TUIWindow window);
+void resizeWindow(TUIWindow window, uint16_t x, uint16_t y, uint8_t width, uint8_t height);
+TUIWindow getActiveWindow();
+void wprintf(TUIWindow window, const char* string, uint8_t x, uint8_t y);
+void flashWindowToBackBuffer(TUIWindow window);
+void drawWindow(TUIWindow window); //draws to back buffer, not optimized at all
+void eraseBackBuffer(); //again, unoptimized, don't use this
 void drawFrontBuffer(); //dont use this, for debug only, not optimized at all
 void flashFrontBuffer(); //also dont use this, please. thanks!
+void drawWindowBuffer(TUIWindow window); //FOR DEBUG ONLY
 #endif
