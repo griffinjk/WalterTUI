@@ -10,12 +10,14 @@
 
 static struct termios originaltty; //get the original terminal settings
 				   //to restore them at the end
-
+//Cell is defined in tui.h, make a front and back buffer
 static Cell* frontBuffer;
 static Cell* backBuffer;
 
+//has info like screen height and width
 static TUIInstance* thistui;
 
+//internal window manager
 typedef struct{//hidden to the user, internal variable
 	uint8_t activeWindow;
 	uint8_t howManyWindows;
@@ -24,21 +26,26 @@ static windowManager wManager;
 
 
 TUIInstance* initTUI(){ //clear the screen, set terminal mode to non-canonical
+	//[2J clears screen [H cursor home [?25l hide cursor
 	printf("\x1b[2J\x1bH\x1b[?25l"); //clear the screen
+	//flush the print buffer to stdout
 	fflush(stdout);
+
+	//saves the current terminal settings to a static variable and does some stuff
 	struct termios tsettings;
 	tcgetattr(STDIN_FILENO, &originaltty);			//save current
-	tsettings = originaltty;
-					     			//terminal settings
+	tsettings = originaltty;				//terminal settings
 	tsettings.c_lflag &= ~(ICANON | ECHO);			//disable echo and
 	tcsetattr(STDIN_FILENO, TCSANOW, &tsettings);  		//canonical mode
 	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);		//sets STDIN to 
 								//nonblocking mode
+	//gets the window size with an ioctl call
 	struct winsize w;
 	if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w)==-1){
 		perror("ioctl");
 	};
 	
+	//set TUIInstance data
 	TUIInstance* tuiinstance = malloc(sizeof(TUIInstance));
 	tuiinstance->screenWidth = w.ws_col;
 	tuiinstance->screenHeight = w.ws_row;
@@ -58,13 +65,16 @@ TUIInstance* initTUI(){ //clear the screen, set terminal mode to non-canonical
 			backBuffer[row*tuiinstance->screenWidth+column].bg = bg_BLACK;
 		}
 	}
+	//initialize wManager
 	wManager.howManyWindows = 0;
 
-
+	//sets TUIInstance static variable
 	thistui = tuiinstance;
+	
 	return tuiinstance;
 }
 
+//this function is entirely depriciated but im attached to it emotionally so I won't delete it
 Cell* createFrameBuffer(TUIInstance* tuiinstance){ //create a static frame buffer that is rows rows and columns columns
 						   //so it wont rly support scrolling, sorry!
 						   //returns the pointer to the first cell array
@@ -73,12 +83,18 @@ Cell* createFrameBuffer(TUIInstance* tuiinstance){ //create a static frame buffe
 
 }
 
-void closeTUI(){
+
+void closeTUI(){ //please call this at the end of your program twin
+	//resets terminal settings to canonical and echo
 	tcsetattr(STDIN_FILENO, TCSANOW, &originaltty);
+	//reenables STDIN blocking
 	fcntl(STDIN_FILENO, F_SETFL, ~O_NONBLOCK);
-	printf("\x1b[0;39;49m\x1b[2J\x1b[H\x1b[25h");
+	//resets colors to default, clears screen, homes cursor, shows cursor
+	printf("\x1b[0;39;49m\x1b[2J\x1b[H\x1b[?25h");
+	//we still probably (definitely) have a memory leak somewhere
 	free(frontBuffer);
 	free(backBuffer);
+	free(thistui);
 	fflush(stdout);
 	return;
 }
