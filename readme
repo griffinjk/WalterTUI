@@ -1,0 +1,52 @@
+Hello nicholas and maybe Irod as well as me, Griffin J K
+glad youre reading this
+these are mostly notes for myself to keep track of everything, but they explain how TUI works
+this is a little project designed just for headless linux debian on my 2018 chromebook, which is now named Walter
+Walter has an intel celeron n3050 i think, 4gb of ram, 32gb storage
+This project will hopefully evolve from just a library into a terminal desktop ui for Walter
+
+Here's a little overview of how it works as of July 7, 2026
+keep in mind that the init function turns off stdin blocking, stdout canonical mode, and stdout echo mode
+the closeTUI function frees all buffers created internally as well as someother stuff, basically all internal varaibles
+closeTUI also turns blocking back on, as well as echo and canonical mode, so definitely call closeTUI
+unless you want a huge memory leak
+There are multiple pixel/frame buffers, each is (SCREENWIDTH * SCREENHEIGHT) * 3 bytes and they are stored on the heap
+each is made of 'Cell's, each cell is 3 bytes, one for the character, one for fg color, one for bg color, THIS IS SUBJECT TO CHANGE
+There is a back buffer which is edited with back buffer commands but is hidden from the user
+There is a front buffer which can be written to the screen by the user, but again its contents are generally hidden
+I say they're hidden but since theyre on the heap their ADDRESSES are not in the scope of the user, but i could just make a function
+	that returns their addresses if i want, i probably will tbh, so theyre not REALLY hidden
+the front buffer is designed to keep track of the state of the screen itself
+the back buffer is designed to be edited and then flashed to the front buffer before drawing the front buffer
+There are also windows, each one with a TUIWindow id, TUIWindow is just an unsigned 8 bit integer (0-255) id
+There is a wManager object, also hidden from the user, it keeps track of the active window, how many windows there are
+	and an array of windowObject objects, each having x, y, width, height, and a Cell* windowBuffer
+so each window also gets a framebuffer, and each is the same size as the front and back buffers that way windows can be
+	resized. these buffers keep track of the state of every cell inside the window, including the borders
+window buffers use local coordinates, so the top left corner of the window is always stored at windowBuffer[0]
+window buffers can be flashed onto the back buffer, and their local coordinates are automatically translated to screen
+	coordinates
+each buffer on Walter takes up about 24kb but this number will go up when I add more color support and unicode/utf-8 support
+RIGHT NOW THERE ARE ONLY SINGLE BYTE ASCII CHARACTERS SUPPORTED :(
+the maximum number of windows is defined in tui.h so thats pretty easy to change, it's like 5 or something, not that it matters
+
+
+plans for the future:
+wprintf(window, string, x, y); 
+use like sprintf or snprintf or something idk to write string to a buffer and then copy each character in the character buffer
+to a Cell locally inside the active window, or whatever specified window. x and y would be local, this writes to the window buffer
+
+I'd like windows to be the base unit of stuff, and everything goes into a window
+
+window resizing, this is already kinda added
+
+present() - this will be a necessary optimization that will compare the states of buffers and then only update the regions that
+need to be updated
+
+drawing the active window last, there needs to be an order in drawing windows so maybe that'll be in the library or maybe
+it's just up to the user tbh that might be better
+
+ok i need to add real ui elements
+Button() - can be highlighted and selected, and upon pressing enter calls a function, will have text like wprintf, 
+
+**Important to add** use read() system call to linux instead of getchar(), idk if this is gonna be on the user or in the library
