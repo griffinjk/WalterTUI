@@ -14,6 +14,9 @@ static struct termios originaltty; //get the original terminal settings
 static Cell* frontBuffer;
 static Cell* backBuffer;
 
+static int* presentationArray;
+static uint32_t presentationArraySize;
+
 //has info like screen height and width
 static TUIInstance* thistui;
 
@@ -48,12 +51,27 @@ TUIInstance* initTUI(){ //clear the screen, set terminal mode to non-canonical
 	
 	//set TUIInstance data
 	TUIInstance* tuiinstance = malloc(sizeof(TUIInstance));
+	if(!tuiinstance){
+		perror("malloc");
+		exit(1);
+	}
 	tuiinstance->screenWidth = w.ws_col;
 	tuiinstance->screenHeight = w.ws_row;
-	
+
+	//create presentation array
+	presentationArray = malloc(tuiinstance->screenWidth*tuiinstance->screenHeight*sizeof(int));
+	if(!presentationArray){
+		perror("malloc");
+		exit(1);
+	}
+
 	//create our front and back buffers
 	frontBuffer = malloc(tuiinstance->screenWidth*tuiinstance->screenHeight*sizeof(Cell));
 	backBuffer = malloc(tuiinstance->screenWidth*tuiinstance->screenHeight*sizeof(Cell));
+	if(!frontBuffer || !backBuffer){
+		perror("malloc");
+		exit(1);
+	}
 	//populate our buffers with spaces
 	for(int row = 0; row < tuiinstance->screenHeight; row++){
 		for(int column = 0; column < tuiinstance->screenWidth; column++){
@@ -304,4 +322,29 @@ void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y){
 		wManager.windows[window].windowBuffer[y*localWidth+x+i].ch = charBuffer[i];
 	}
 	return;
+}
+
+void present(){
+	//store the indices of the cells that differ between the back and front buffers
+	uint32_t index = 0;
+	for(int i = 0; i < thistui->screenHeight*thistui->screenWidth; i++){
+		if(backBuffer[i].ch != frontBuffer[i].ch || backBuffer[i].fg != frontBuffer[i].fg || backBuffer[i].bg != frontBuffer[i].bg){
+			presentationArray[index] = i;
+			index++;
+		}
+	}
+	presentationArraySize = index;
+}
+
+void drawFrontBufferOptimized(){
+	for(uint32_t i = 0; i < presentationArraySize; i++){
+		uint32_t index = presentationArray[i];
+		printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
+				index/thistui->screenWidth,
+				index%thistui->screenWidth,
+				frontBuffer[index].fg,
+				frontBuffer[index].bg,
+				frontBuffer[index].ch);
+	}
+	fflush(stdout);
 }

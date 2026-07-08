@@ -1,4 +1,6 @@
 Hello nicholas and maybe Irod as well as me, Griffin J K
+TS ONLY WORKS ON UNIX/LINUX, windows will probably sell you out to the ai robot death machines and macos will probably
+	just tell you you need to buy a new computer, it could probably work on macos though, maybe one day or something
 glad youre reading this
 these are mostly notes for myself to keep track of everything, but they explain how TUI works
 this is a little project designed just for headless linux debian on my 2018 chromebook, which is now named Walter
@@ -50,3 +52,14 @@ ok i need to add real ui elements
 Button() - can be highlighted and selected, and upon pressing enter calls a function, will have text like wprintf, 
 
 **Important to add** use read() system call to linux instead of getchar(), idk if this is gonna be on the user or in the library
+
+
+July 8, 2026
+I think I want to separate some of the files to make them easier to read and edit and stuff, maybe debug files, tui, window,
+but theyll probably all keep the same header. I'm probably gonna start working on the project on my computer, not on Walter,
+a terminal multiplexer on walter is kinda slow and so much vim is starting to get to me. That means I'll probably be making
+way more commits and each commit is probably gonna be some bs anyways
+
+-I want to add functionality where the main tui program runs something of a terminal desktop and then separate processes can
+create their own windows, I think i can do this by writing window buffers to a /tmp file and using mmap to 'share the memeory'
+

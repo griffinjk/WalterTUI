@@ -79,8 +79,10 @@ wSettings getWindowSettings(TUIWindow window);
 void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y);
 void flashWindowToBackBuffer(TUIWindow window);
 void clearWindowBuffer(TUIWindow window);
-void drawWindow(TUIWindow window); //draws to back buffer, not optimized at all
-void eraseBackBuffer(); //again, unoptimized, don't use this
+void present();
+void drawFrontBufferOptimized(); //uses presentation array
+void drawWindow(TUIWindow window); //draws to back buffer, doesnt rly work
+void eraseBackBuffer(); //again, unoptimized, don't use this. doesnt use presentation array
 void drawFrontBuffer(); //dont use this, for debug only, not optimized at all
 void flashFrontBuffer(); //also dont use this, please. thanks!
 void drawWindowBuffer(TUIWindow window); //FOR DEBUG ONLY

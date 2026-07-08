@@ -71,7 +71,7 @@ int main(){
 		drawWindow(window2);
 		flashFrontBuffer();
 
-		drawFrontBuffer();	
+		drawFrontBufferOptimized();
 	}
 	closeTUI();
 	return 0;
