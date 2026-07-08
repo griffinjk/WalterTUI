@@ -199,63 +199,7 @@ void drawWindow(TUIWindow window){
 			wManager.windows[window].windowBuffer[i+(localHeight-1)*(localWidth)].ch = '-';	
 			wManager.windows[window].windowBuffer[i+(localHeight-1)*(localWidth)].fg = fg_WHITE;	
 		}
-	}
-	
-	/*//corners
-	//top
-	backBuffer[wManager.windows[window].y*thistui->screenWidth+					//y/row
-		wManager.windows[window].x].ch = '#';							//x/column
-	backBuffer[wManager.windows[window].y*thistui->screenWidth+					//y
-		wManager.windows[window].x+wManager.windows[window].width].ch = '#';			//x
-	//bottom
-	backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+
-		wManager.windows[window].x].ch = '#';
-	backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+
-		wManager.windows[window].x+wManager.windows[window].width].ch = '#';
-	
-	//recolor if active
-	if(wManager.activeWindow == window){
-		//top foreground color bright white
-		backBuffer[wManager.windows[window].y*thistui->screenWidth+
-			wManager.windows[window].x].fg = fg_BRIGHTWHITE;
-		backBuffer[wManager.windows[window].y*thistui->screenWidth+
-			wManager.windows[window].x+wManager.windows[window].width].fg = fg_BRIGHTWHITE;
-		//bottom foreground color bright white
-		backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+
-			wManager.windows[window].x].fg = fg_BRIGHTWHITE;
-		backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+
-			wManager.windows[window].x+wManager.windows[window].width].fg = fg_BRIGHTWHITE;
-	}
-
-
-	//inside the corners, the lines
-	//top and bottom
-	//if active
-	if(wManager.activeWindow == window){
-		for(int i = wManager.windows[window].x+1; i < wManager.windows[window].width+wManager.windows[window].x; i++){
-			backBuffer[wManager.windows[window].y*thistui->screenWidth+i].ch = '-';	
-			backBuffer[wManager.windows[window].y*thistui->screenWidth+i].fg = fg_BRIGHTWHITE;
-			backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+i].ch = '-';
-			backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+i].fg = fg_BRIGHTWHITE;
-		}
-		//sides
-		for(int i = wManager.windows[window].y+1; i < wManager.windows[window].height+wManager.windows[window].y; i++){
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x].ch = '|';	
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x].fg = fg_BRIGHTWHITE;	
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x+wManager.windows[window].width].ch = '|';
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x+wManager.windows[window].width].fg = fg_BRIGHTWHITE;
-		}
-	}else{
-		for(int i = wManager.windows[window].x+1; i < wManager.windows[window].width+wManager.windows[window].x; i++){
-			backBuffer[wManager.windows[window].y*thistui->screenWidth+i].ch = '-';	
-			backBuffer[(wManager.windows[window].y+wManager.windows[window].height)*thistui->screenWidth+i].ch = '-';
-		}
-		//sides
-		for(int i = wManager.windows[window].y+1; i < wManager.windows[window].height+wManager.windows[window].y; i++){
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x].ch = '|';	
-			backBuffer[i*thistui->screenWidth+wManager.windows[window].x+wManager.windows[window].width].ch = '|';
-		}
-	}*/
+	}	
 
 	flashWindowToBackBuffer(window);
 	return;
@@ -304,8 +248,19 @@ void resizeWindow(TUIWindow window, uint16_t x, uint16_t y, uint8_t width, uint8
 }
 
 TUIWindow getActiveWindow(){
-	return wManager.activeWindow;
+	return wManager.activeWindow;	
+	
 }
+
+wSettings getWindowSettings(TUIWindow window){
+	wSettings settings;
+	settings.x = wManager.windows[window].x;
+	settings.y = wManager.windows[window].y;
+	settings.width = wManager.windows[window].width;
+	settings.height = wManager.windows[window].height;
+	return settings;
+}
+
 void flashWindowToBackBuffer(TUIWindow window){
 	uint8_t windowHeight, windowWidth, windowX, windowY;
 	uint16_t  screenWidth;
@@ -337,4 +292,16 @@ void drawWindowBuffer(TUIWindow window){
 		}
 	}
 	fflush(stdout);
+}
+//maximum string size of 256 characters
+void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y){
+	char charBuffer[256];
+	snprintf(charBuffer, sizeof(charBuffer), string);
+	
+	uint8_t localWidth = wManager.windows[window].width;
+
+	for(int i = 0; i < strlen(string); i++){
+		wManager.windows[window].windowBuffer[y*localWidth+x+i].ch = charBuffer[i];
+	}
+	return;
 }

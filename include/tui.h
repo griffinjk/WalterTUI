@@ -38,7 +38,12 @@
 
 #define MAX_NUMBER_OF_WINDOWS 5
 
-
+typedef struct{
+	uint8_t x;
+	uint8_t y;
+	uint8_t width;
+	uint8_t height;
+}wSettings;
 
 typedef struct{
 	char ch;
@@ -70,8 +75,10 @@ TUIWindow createWindow(uint16_t x, uint16_t y, uint8_t width, uint8_t height); /
 void changeActiveWindow(TUIWindow window);
 void resizeWindow(TUIWindow window, uint16_t x, uint16_t y, uint8_t width, uint8_t height);
 TUIWindow getActiveWindow();
-void wprintf(TUIWindow window, const char* string, uint8_t x, uint8_t y);
+wSettings getWindowSettings(TUIWindow window);
+void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y);
 void flashWindowToBackBuffer(TUIWindow window);
+void clearWindowBuffer(TUIWindow window);
 void drawWindow(TUIWindow window); //draws to back buffer, not optimized at all
 void eraseBackBuffer(); //again, unoptimized, don't use this
 void drawFrontBuffer(); //dont use this, for debug only, not optimized at all
