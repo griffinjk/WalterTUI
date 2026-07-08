@@ -20,6 +20,7 @@ int main(){
 	wprintf(window2, "This is the second window!", 1, 1);
 	wprintf(window1, "This is the first window!", 1, 1);
 	flashFrontBuffer();
+	drawFrontBuffer();
 	while(1){
 		tv.tv_sec = 0;
 		tv.tv_usec = 100000;
@@ -69,6 +70,7 @@ int main(){
 		eraseBackBuffer();
 		drawWindow(window1);
 		drawWindow(window2);
+		present();
 		flashFrontBuffer();
 
 		drawFrontBufferOptimized();

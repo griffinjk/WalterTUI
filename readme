@@ -63,3 +63,5 @@ way more commits and each commit is probably gonna be some bs anyways
 -I want to add functionality where the main tui program runs something of a terminal desktop and then separate processes can
 create their own windows, I think i can do this by writing window buffers to a /tmp file and using mmap to 'share the memeory'
 
+There are no more hidden internal variables, everything is now in the header file and can be accessed by the user
+

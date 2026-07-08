@@ -8,6 +8,14 @@
 #include "tui.h"
 #include <string.h>
 
+//window manager
+typedef struct{//now visible to the user, hopefully no problems
+	WindowObject windows[MAX_NUMBER_OF_WINDOWS];
+	TUIWindow activeWindow;
+	uint8_t howManyWindows;
+}windowManager;
+static windowManager wManager;
+
 static struct termios originaltty; //get the original terminal settings
 				   //to restore them at the end
 //Cell is defined in tui.h, make a front and back buffer
@@ -19,15 +27,6 @@ static uint32_t presentationArraySize;
 
 //has info like screen height and width
 static TUIInstance* thistui;
-
-//internal window manager
-typedef struct{//hidden to the user, internal variable
-	WindowObject windows[MAX_NUMBER_OF_WINDOWS];
-	TUIWindow activeWindow;
-	uint8_t howManyWindows;
-}windowManager;
-static windowManager wManager;
-
 
 TUIInstance* initTUI(){ //clear the screen, set terminal mode to non-canonical
 	//[2J clears screen [H cursor home [?25l hide cursor
@@ -121,25 +120,93 @@ void closeTUI(){ //please call this at the end of your program twin
 	return;
 }
 
-TUIWindow createWindow(uint16_t x, uint16_t y, uint8_t width, uint8_t height){
-	/*//corners
-	backBuffer[y*thistui->screenWidth+x].ch = '#';
-	backBuffer[y*thistui->screenWidth+x+width].ch = '#';
-	backBuffer[(y+height)*thistui->screenWidth+x].ch = '#';
-	backBuffer[(y+height)*thistui->screenWidth+x+width].ch = '#';
-	
-	//inside
-	//top and bottom
-	for(int i = x+1; i < width+x; i++){
-		backBuffer[y*thistui->screenWidth+i].ch = '-';	
-		backBuffer[(y+height)*thistui->screenWidth+i].ch = '-';
-	}
-	//sides
-	for(int i = y+1; i < height+y; i++){
-		backBuffer[i*thistui->screenWidth+x].ch = '|';	
-		backBuffer[i*thistui->screenWidth+x+width].ch = '|';
-	}*/
 
+
+void drawFrontBuffer(){
+	for(int row = 0; row < thistui->screenHeight; row++){
+		for(int column = 0; column < thistui->screenWidth; column++){
+			printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
+					row,
+					column,
+					frontBuffer[row*thistui->screenWidth+column].fg,
+					frontBuffer[row*thistui->screenWidth+column].bg,
+					frontBuffer[row*thistui->screenWidth+column].ch);
+
+		}
+	}
+	fflush(stdout);
+}
+
+void flashFrontBuffer(){
+	memcpy(frontBuffer, backBuffer, thistui->screenHeight*thistui->screenWidth*sizeof(Cell));
+	return;
+}
+
+void eraseBackBuffer(){
+	for(int row = 0; row < thistui->screenHeight; row++){
+		for(int column = 0; column < thistui->screenWidth; column++){
+			backBuffer[row*thistui->screenWidth+column].ch = ' ';
+			backBuffer[row*thistui->screenWidth+column].fg = fg_WHITE;
+			backBuffer[row*thistui->screenWidth+column].bg = bg_BLACK;
+		}
+	}
+}
+
+
+
+wSettings getWindowSettings(TUIWindow window){
+	wSettings settings;
+	settings.x = wManager.windows[window].x;
+	settings.y = wManager.windows[window].y;
+	settings.width = wManager.windows[window].width;
+	settings.height = wManager.windows[window].height;
+	return settings;
+}
+
+
+void drawWindowBuffer(TUIWindow window){
+	for(int row = 0; row < thistui->screenHeight; row++){
+		for(int column = 0; column < thistui->screenWidth; column++){
+			printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
+					row,
+					column,
+					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].fg,
+					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].bg,
+					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].ch);
+
+		}
+	}
+	fflush(stdout);
+}
+
+void present(){
+	//store the indices of the cells that differ between the back and front buffers
+	uint32_t index = 0;
+	for(int i = 0; i < thistui->screenHeight*thistui->screenWidth; i++){
+		presentationArray[i] = 0;
+		if(backBuffer[i].ch != frontBuffer[i].ch || backBuffer[i].fg != frontBuffer[i].fg || backBuffer[i].bg != frontBuffer[i].bg){
+			presentationArray[index] = i;
+			index++;
+		}
+	}
+	presentationArraySize = index;
+}
+
+
+void drawFrontBufferOptimized(){
+	for(uint32_t i = 0; i < presentationArraySize; i++){
+		uint32_t index = presentationArray[i];
+		printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
+				index/thistui->screenWidth,
+				index%thistui->screenWidth,
+				frontBuffer[index].fg,
+				frontBuffer[index].bg,
+				frontBuffer[index].ch);
+	}
+	fflush(stdout);
+}
+
+TUIWindow createWindow(uint16_t x, uint16_t y, uint8_t width, uint8_t height){
 	wManager.howManyWindows++;
 	wManager.windows[wManager.howManyWindows-1].id=wManager.howManyWindows-1;
 	wManager.windows[wManager.howManyWindows-1].x=x;
@@ -157,6 +224,7 @@ TUIWindow createWindow(uint16_t x, uint16_t y, uint8_t width, uint8_t height){
 	}
 	return wManager.howManyWindows-1;
 }
+
 //draw a window to its own windowBuffer, then flash the windowBuffer to backBuffer
 //initially uses local coordinates, then global
 void drawWindow(TUIWindow window){
@@ -222,40 +290,6 @@ void drawWindow(TUIWindow window){
 	flashWindowToBackBuffer(window);
 	return;
 }
-void drawFrontBuffer(){
-	for(int row = 0; row < thistui->screenHeight; row++){
-		for(int column = 0; column < thistui->screenWidth; column++){
-			printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
-					row,
-					column,
-					frontBuffer[row*thistui->screenWidth+column].fg,
-					frontBuffer[row*thistui->screenWidth+column].bg,
-					frontBuffer[row*thistui->screenWidth+column].ch);
-
-		}
-	}
-	fflush(stdout);
-}
-
-void flashFrontBuffer(){
-	memcpy(frontBuffer, backBuffer, thistui->screenHeight*thistui->screenWidth*sizeof(Cell));
-	return;
-}
-
-void changeActiveWindow(TUIWindow window){
-	wManager.activeWindow = window;
-
-	return;	
-}
-void eraseBackBuffer(){
-	for(int row = 0; row < thistui->screenHeight; row++){
-		for(int column = 0; column < thistui->screenWidth; column++){
-			backBuffer[row*thistui->screenWidth+column].ch = ' ';
-			backBuffer[row*thistui->screenWidth+column].fg = fg_WHITE;
-			backBuffer[row*thistui->screenWidth+column].bg = bg_BLACK;
-		}
-	}
-}
 
 void resizeWindow(TUIWindow window, uint16_t x, uint16_t y, uint8_t width, uint8_t height){
 	wManager.windows[window].x = x;
@@ -268,15 +302,6 @@ void resizeWindow(TUIWindow window, uint16_t x, uint16_t y, uint8_t width, uint8
 TUIWindow getActiveWindow(){
 	return wManager.activeWindow;	
 	
-}
-
-wSettings getWindowSettings(TUIWindow window){
-	wSettings settings;
-	settings.x = wManager.windows[window].x;
-	settings.y = wManager.windows[window].y;
-	settings.width = wManager.windows[window].width;
-	settings.height = wManager.windows[window].height;
-	return settings;
 }
 
 void flashWindowToBackBuffer(TUIWindow window){
@@ -297,20 +322,7 @@ void flashWindowToBackBuffer(TUIWindow window){
 	}
 	return;
 }
-void drawWindowBuffer(TUIWindow window){
-	for(int row = 0; row < thistui->screenHeight; row++){
-		for(int column = 0; column < thistui->screenWidth; column++){
-			printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
-					row,
-					column,
-					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].fg,
-					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].bg,
-					wManager.windows[window].windowBuffer[row*thistui->screenWidth+column].ch);
 
-		}
-	}
-	fflush(stdout);
-}
 //maximum string size of 256 characters
 void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y){
 	char charBuffer[256];
@@ -324,27 +336,9 @@ void wprintf(TUIWindow window, char* string, uint8_t x, uint8_t y){
 	return;
 }
 
-void present(){
-	//store the indices of the cells that differ between the back and front buffers
-	uint32_t index = 0;
-	for(int i = 0; i < thistui->screenHeight*thistui->screenWidth; i++){
-		if(backBuffer[i].ch != frontBuffer[i].ch || backBuffer[i].fg != frontBuffer[i].fg || backBuffer[i].bg != frontBuffer[i].bg){
-			presentationArray[index] = i;
-			index++;
-		}
-	}
-	presentationArraySize = index;
-}
 
-void drawFrontBufferOptimized(){
-	for(uint32_t i = 0; i < presentationArraySize; i++){
-		uint32_t index = presentationArray[i];
-		printf("\x1b[%d;%dH\x1b[0;%d;%dm%c",
-				index/thistui->screenWidth,
-				index%thistui->screenWidth,
-				frontBuffer[index].fg,
-				frontBuffer[index].bg,
-				frontBuffer[index].ch);
-	}
-	fflush(stdout);
+void changeActiveWindow(TUIWindow window){
+	wManager.activeWindow = window;
+
+	return;	
 }

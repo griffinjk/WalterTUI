@@ -38,6 +38,8 @@
 
 #define MAX_NUMBER_OF_WINDOWS 5
 
+typedef uint8_t TUIWindow;
+
 typedef struct{
 	uint8_t x;
 	uint8_t y;
@@ -57,16 +59,15 @@ typedef struct{
 }TUIInstance;
 
 typedef struct{
+	Cell* windowBuffer;
 	uint8_t id;
-	uint16_t x;
-	uint16_t y;
 	uint8_t width;
 	uint8_t height;
-	Cell* windowBuffer;
+	uint16_t x;
+	uint16_t y;
 }WindowObject;
 
 
-typedef int TUIWindow;
 
 void closeTUI();
 TUIInstance* initTUI();
