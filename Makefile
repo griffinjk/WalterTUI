@@ -4,7 +4,7 @@ CFLAGS = -Wall -Wextra -Iinclude -g
 SRC = src/tui.c
 OBJ = $(SRC:.c=.o)
 
-TEST = tests/tuitest.c
+TEST = test/tuitest.c
 
 OUT = test
 
