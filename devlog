@@ -65,3 +65,12 @@ create their own windows, I think i can do this by writing window buffers to a /
 
 There are no more hidden internal variables, everything is now in the header file and can be accessed by the user
 
+Walter Window Manager:
+Jul 12 2026
+One central window manager terminal user interface will render each window and keep track of active window, passing input, etc.
+windows will use the wwm-window.h and wwm api to create windows, mmaped to files, establish a socket connection to the window
+manager and then write data about the window: framebuffer and data, to files that the window manager mmaps and renders
+the wwm api library is being designed as a static .a library but I'm trying to avoid using stdlib to maybe possibly save resources
+the .s file contains some assembly code, just a single function to load a syscall into the registers and call a syscall, wwm header
+is a general header with some definitions but wwm-window and wwm-wm will have some real stuff going on, maybe, everything is defined
+in the static library though. This is not done yet just a plan. also im renaming this readme file to something else probably devlog
